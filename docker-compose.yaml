@@ -1,0 +1,53 @@
+version: '3.2'
+services:
+  db1:
+    image: mariadb:latest
+    command: '--default-authentication-plugin=mysql_native_password'
+    volumes:
+      - db1_data:/var/lib/mysql 
+#    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=somewordpress
+      - MYSQL_DATABASE=wordpress
+      - MYSQL_USER=wordpress
+      - MYSQL_PASSWORD=wordpress
+    ports:
+      - 3306:3306
+    networks:
+      - webdbnet
+
+  elasticsearch:
+    image: markoshust/magento-elasticsearch:7.16-0
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - "discovery.type=single-node"
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      ## Avoid test failures due to small disks
+      ## More info at https://github.com/markshust/docker-magento/issues/488
+      - "cluster.routing.allocation.disk.threshold_enabled=false"
+      - "index.blocks.read_only_allow_delete" 
+    restart: always
+    networks:
+      - webdbnet
+
+  php-apache-environment:
+    container_name: nginx1
+    build: ./nweb 
+    volumes:
+      - /var/www/html/hayatmart-magento2:/var/www/html
+      - /usr/local/bin/composer:/usr/local/bin/composer
+    ports:
+      - 80:80  
+    restart: always
+    networks:
+      - webdbnet 
+
+networks:
+  webdbnet:
+volumes:
+  db1_data:
+
+
+
